@@ -11,8 +11,25 @@ import os
 
 # 프로젝트 루트 기준 경로 (이 파일 위치 기준 상대 경로)
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_DOCS_DIR = os.path.join(_THIS_DIR, "Docs")
 _DEFAULT_QUESTION_PATH = os.path.join(_THIS_DIR, "ZZZZ_CHATGPT_QUESTION.txt")
 _DEFAULT_RESPONSE_PATH = os.path.join(_THIS_DIR, "ZZZZ_CHATGPT_RESPONSE.txt")
+
+
+def _read_dir_files_sorted(dir_path: str) -> str:
+    """디렉터리 내 모든 파일을 이름 순으로 읽어 합친 텍스트를 반환한다. 디렉터리가 없으면 빈 문자열."""
+    if not os.path.isdir(dir_path):
+        return ""
+    parts = []
+    names = sorted(f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f)))
+    for name in names:
+        path = os.path.join(dir_path, name)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                parts.append(f.read())
+        except OSError:
+            pass
+    return "\n".join(parts)
 
 
 class Cola:
@@ -26,13 +43,27 @@ class Cola:
         self._question_path = question_path or _DEFAULT_QUESTION_PATH
         self._response_path = response_path or _DEFAULT_RESPONSE_PATH
 
+    def make_chat_gpt_role(self) -> str:
+        """Docs/ChatGptRole 전체 + Docs/Project 전체를 이름 순으로 읽어 합친 텍스트를 반환한다."""
+        chatgpt_role = _read_dir_files_sorted(os.path.join(_DOCS_DIR, "ChatGptRole"))
+        project = _read_dir_files_sorted(os.path.join(_DOCS_DIR, "Project"))
+        return "\n".join(filter(None, [chatgpt_role, project]))
+
+    def make_cursor_ai_role(self) -> str:
+        """Docs/CursorAiRole 전체 + Docs/Project 전체를 이름 순으로 읽어 합친 텍스트를 반환한다."""
+        cursor_role = _read_dir_files_sorted(os.path.join(_DOCS_DIR, "CursorAiRole"))
+        project = _read_dir_files_sorted(os.path.join(_DOCS_DIR, "Project"))
+        return "\n".join(filter(None, [cursor_role, project]))
+
     def check(self) -> bool:
         """
         실행 환경이 갖춰졌는지 확인한다.
         - 현재 디렉터리(Cola.py 기준)에 ChatGPT.py 존재
         - 현재 디렉터리에 chromedriver.exe 존재
         - ChatGPT().check_browser() 가 True
-        세 가지가 모두 만족하면 True, 하나라도 아니면 False.
+        - Docs 디렉터리 존재
+        - Docs 아래 ChatGptRole, CursorAiRole, Project 디렉터리 존재 및 각각 파일 1개 이상
+        모두 만족하면 True, 하나라도 아니면 False.
         """
         chatgpt_py = os.path.join(_THIS_DIR, "ChatGPT.py")
         chromedriver = os.path.join(_THIS_DIR, "chromedriver.exe")
@@ -40,6 +71,17 @@ class Cola:
             return False
         if not os.path.isfile(chromedriver):
             return False
+        if not os.path.isdir(_DOCS_DIR):
+            return False
+        for subdir in ("ChatGptRole", "CursorAiRole", "Project"):
+            path = os.path.join(_DOCS_DIR, subdir)
+            if not os.path.isdir(path):
+                return False
+            has_file = any(
+                os.path.isfile(os.path.join(path, f)) for f in os.listdir(path)
+            )
+            if not has_file:
+                return False
         try:
             from ChatGPT import ChatGPT
             if not ChatGPT().check_browser():
