@@ -111,18 +111,18 @@ class Cola:
             with open(qpath, "w", encoding="utf-8") as f:
                 f.write(question)
         except OSError as e:
-            return f"[Cola] 질문 파일 쓰기 실패: {e}"
+            return f"[Cola] Failed to write question file: {e}"
 
         try:
             chatgpt = ChatGPT()
             chatgpt.get(qpath, rpath)
         except SystemExit:
-            return "[Cola] ChatGPT 실행 중 오류(연결 실패/시간 초과 등). Chrome·ChatGPT 탭을 확인하세요."
+            return "[Cola] ChatGPT run error (connection failed/timeout etc). Check Chrome and ChatGPT tab."
         except Exception as e:
-            return f"[Cola] 오류: {e}"
+            return f"[Cola] Error: {e}"
 
         try:
             with open(rpath, "r", encoding="utf-8") as f:
                 return f.read()
         except OSError as e:
-            return f"[Cola] 응답 파일 읽기 실패: {e}"
+            return f"[Cola] Failed to read response file: {e}"
