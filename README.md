@@ -2,6 +2,10 @@
 
 **Version: v1.0 (Stable)**
 
+**Live Demo:** `https://<your-username>.github.io/<repo-name>/` (e.g. `https://yourname.github.io/COLA/` — replace with your actual GitHub Pages URL)
+
+**Status:** Complete (v1.0 stable). Main branch is protected; changes must go through PR + CI. No further development unless a bug or v1.1 scope is approved.
+
 A lightweight web-based calculator.
 
 ## Features
