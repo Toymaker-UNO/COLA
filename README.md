@@ -38,6 +38,13 @@ No installation required.
 - `app.js` – Calculator engine and keyboard handling
 - `README.md` – This file
 
+## Branch Strategy
+
+| Branch   | Purpose |
+|----------|---------|
+| `main`   | Stable production (v1.0) |
+| `develop`| Future improvements and bug fixes |
+
 ## Deploy with GitHub Pages
 
 1. Ensure the project is in a GitHub repository (e.g. `COLA` or `cola-calculator`).
