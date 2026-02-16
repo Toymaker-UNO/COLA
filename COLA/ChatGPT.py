@@ -1,14 +1,3 @@
-"""
-이미 디버깅 포트로 열려 있는 Chrome에 연결한 뒤,
-현재 탭에서 '무엇이든 물어보세요' 입력창에 질문을 넣고 전송한다.
-전송 전 HTML 저장 및 '오른쪽에 좋은 응답이 있는 복사 버튼' 개수 확인 후,
-전송 후 1초 간격으로 폴링하며 새로 생긴 해당 복사 버튼을 클릭하고
-응답을 지정한 파일로 저장한다. 임시 HTML 파일은 삭제한다.
-
-사용 전: start_chrome_debug.bat 등으로 Chrome을 9222 포트로 실행한 뒤,
-        브라우저에서 chatgpt.com 을 열어 두고 실행하세요.
-"""
-
 import socket
 import os
 import sys
@@ -24,8 +13,6 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 class ChatGPT:
-    """ChatGPT 탭에 질문을 보내고 응답을 파일로 저장하는 클래스."""
-
     DEFAULT_DEBUG_PORT = 9222
     CONNECT_TIMEOUT_SEC = 180
     PROMPT_SELECTOR = "#prompt-textarea"
@@ -260,7 +247,7 @@ class ChatGPT:
             print("질문 파일이 비어 있습니다: %s" % question_path, file=sys.stderr)
             sys.exit(1)
 
-        self._work_dir = os.getcwd()
+        self._work_dir = os.path.dirname(os.path.abspath(__file__))
         self._temp_html_files = []
         self._temp_counter = 0
 
