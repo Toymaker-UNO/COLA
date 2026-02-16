@@ -247,6 +247,10 @@ class ChatGPT:
             print("질문 파일이 비어 있습니다: %s" % question_path, file=sys.stderr)
             sys.exit(1)
 
+        # 응답 파일을 없으면 생성, 있으면 비우기
+        with open(response_path, "w", encoding="utf-8"):
+            pass
+
         self._work_dir = os.path.dirname(os.path.abspath(__file__))
         self._temp_html_files = []
         self._temp_counter = 0
