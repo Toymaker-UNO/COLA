@@ -9,6 +9,7 @@
         브라우저에서 chatgpt.com 을 열어 두고 실행하세요.
 """
 
+import socket
 import os
 import sys
 import threading
@@ -33,13 +34,23 @@ class ChatGPT:
     WAIT_BEFORE_FIRST_CLICK_SEC = 1.5  # 새 버튼 감지 후 가림 레이어 안정화 대기
     WAIT_AFTER_CLICK_SEC = 2
     POLL_TIMEOUT_SEC = 180
-    TEMP_HTML_PATTERN = "chatgpt_%04d_tmp.html"  # 0000, 0001, ...
+    TEMP_HTML_PATTERN = "ZZZZ_CHATGPT_TEMP_%04d.html"  # 0000, 0001, ...
 
     def __init__(self):
         self._driver = None
         self._work_dir = None
         self._temp_html_files = []
         self._temp_counter = 0
+
+    def check_browser(self, port: int | None = None) -> bool:
+        """지정 포트에 Chrome 디버깅이 떠 있으면 True, 없으면 False. port 생략 시 DEFAULT_DEBUG_PORT 사용."""
+        if port is None:
+            port = self.DEFAULT_DEBUG_PORT
+        try:
+            with socket.create_connection(("localhost", port), timeout=2):
+                return True
+        except (socket.error, OSError):
+            return False
 
     def _save_html_to(self, a_path: str) -> None:
         """현재 페이지 소스를 a_path 에 저장한다."""
@@ -92,8 +103,7 @@ class ChatGPT:
         except Exception:
             return ""
 
-    @staticmethod
-    def _get_clipboard_text() -> str:
+    def _get_clipboard_text(self) -> str:
         """시스템 클립보드 텍스트를 반환한다."""
         try:
             from tkinter import Tk
@@ -124,7 +134,7 @@ class ChatGPT:
         """디버깅 포트로 Chrome에 연결하고 self._driver에 설정한다. 실패 시 sys.exit(1)."""
         port = self.DEFAULT_DEBUG_PORT
         chrome_options = Options()
-        chrome_options.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
+        chrome_options.add_experimental_option("debuggerAddress", f"localhost:{port}")
 
         print("이미 열린 Chrome에 연결 중... (포트 %d)" % port, flush=True)
         result = [None]
@@ -263,9 +273,10 @@ def main() -> None:
         question_path = sys.argv[1]
         response_path = sys.argv[2]
     else:
-        question_path = "ZZ_99_question.txt"
-        response_path = "ZZ_99_response.txt"
+        question_path = "ZZZZ_CHATGPT_QUESTION.txt"
+        response_path = "ZZZZ_CHATGPT_RESPONSE.txt"
     chatgpt = ChatGPT()
+    print(f"브라우저 연결 상태: {chatgpt.check_browser()}")
     chatgpt.get(question_path, response_path)
 
 

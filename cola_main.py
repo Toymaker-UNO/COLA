@@ -1,0 +1,64 @@
+"""
+ColaMain: COLA 오케스트레이션 진입점.
+ChatGPT(브라우저)에 질문을 보내고 응답을 받아 반환한다.
+MCP·CLI·다른 스크립트에서 공통으로 사용한다.
+
+사용 전: 00_start_chrome_debug.bat 으로 Chrome을 9222 포트로 띄우고,
+        chatgpt.com 탭을 연 뒤 사용하세요.
+"""
+
+import os
+
+# 프로젝트 루트 기준 경로 (이 파일 위치 기준 상대 경로)
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_DEFAULT_QUESTION_PATH = os.path.join(_THIS_DIR, "ZZ_99_question.txt")
+_DEFAULT_RESPONSE_PATH = os.path.join(_THIS_DIR, "ZZ_99_response.txt")
+
+
+class ColaMain:
+    """ChatGPT 브라우저에 질문을 보내고 응답 텍스트를 반환하는 진입점."""
+
+    def __init__(
+        self,
+        question_path: str | None = None,
+        response_path: str | None = None,
+    ):
+        self._question_path = question_path or _DEFAULT_QUESTION_PATH
+        self._response_path = response_path or _DEFAULT_RESPONSE_PATH
+
+    def ask(self, question: str) -> str:
+        """
+        질문을 ChatGPT(브라우저)에 보내고, 응답 텍스트를 반환한다.
+        Chrome이 9222 디버깅 포트로 열려 있고 ChatGPT 탭이 있어야 한다.
+
+        :param question: ChatGPT에 보낼 질문 문자열
+        :return: ChatGPT 응답 전체 텍스트 (실패 시 빈 문자열 또는 에러 메시지)
+        """
+        question = (question or "").strip()
+        if not question:
+            return ""
+
+        from ChatGPT import ChatGPT
+
+        qpath = os.path.abspath(self._question_path)
+        rpath = os.path.abspath(self._response_path)
+
+        try:
+            with open(qpath, "w", encoding="utf-8") as f:
+                f.write(question)
+        except OSError as e:
+            return f"[ColaMain] 질문 파일 쓰기 실패: {e}"
+
+        try:
+            chatgpt = ChatGPT()
+            chatgpt.get(qpath, rpath)
+        except SystemExit:
+            return "[ColaMain] ChatGPT 실행 중 오류(연결 실패/시간 초과 등). Chrome·ChatGPT 탭을 확인하세요."
+        except Exception as e:
+            return f"[ColaMain] 오류: {e}"
+
+        try:
+            with open(rpath, "r", encoding="utf-8") as f:
+                return f.read()
+        except OSError as e:
+            return f"[ColaMain] 응답 파일 읽기 실패: {e}"
