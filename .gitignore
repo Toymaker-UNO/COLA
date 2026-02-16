@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# IDE / Editor
+.cursor/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs & temp
+log.txt
+*.tmp
+chatgpt_*_tmp.html
+
+# ChromeDriver (binary, platform-specific)
+chromedriver.exe
+chromedriver
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Optional: uncomment if you don't want to commit I/O files
+question.txt
+response.txt
+ZZ_99_question.txt
+ZZ_99_response.txt
