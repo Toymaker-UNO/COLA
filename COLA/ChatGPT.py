@@ -253,6 +253,8 @@ class ChatGPT:
 
         with open(question_path, "r", encoding="utf-8") as f:
             text_to_send = f.read().strip()
+        # ChatGPT 입력창에 넣을 때 모든 엔터 제거 (한 줄로 전송)
+        text_to_send = text_to_send.replace("\r\n", "\n").replace("\n", "").replace("\r", "")
 
         if not text_to_send:
             print("질문 파일이 비어 있습니다: %s" % question_path, file=sys.stderr)
@@ -269,12 +271,13 @@ class ChatGPT:
 
 def main() -> None:
     """ChatGPT 인스턴스를 만들고, 질문/응답 파일 경로로 get()을 호출한다."""
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
     if len(sys.argv) >= 3:
         question_path = sys.argv[1]
         response_path = sys.argv[2]
     else:
-        question_path = "ZZZZ_CHATGPT_QUESTION.txt"
-        response_path = "ZZZZ_CHATGPT_RESPONSE.txt"
+        question_path = os.path.join(_script_dir, "ZZZZ_CHATGPT_QUESTION.txt")
+        response_path = os.path.join(_script_dir, "ZZZZ_CHATGPT_RESPONSE.txt")
     chatgpt = ChatGPT()
     print(f"브라우저 연결 상태: {chatgpt.check_browser()}")
     chatgpt.get(question_path, response_path)
