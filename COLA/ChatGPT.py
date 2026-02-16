@@ -22,12 +22,17 @@ class ChatGPT:
     WAIT_AFTER_CLICK_SEC = 2
     POLL_TIMEOUT_SEC = 180
     TEMP_HTML_PATTERN = "ZZZZ_CHATGPT_TEMP_%04d.html"  # 0000, 0001, ...
+    PRINT_FLAG = False
 
     def __init__(self):
         self._driver = None
         self._work_dir = None
         self._temp_html_files = []
         self._temp_counter = 0
+
+    def _stdout_print(self, *args, **kwargs) -> None:
+        if self.PRINT_FLAG:
+            print(*args, **kwargs)
 
     def check_browser(self, port: int | None = None) -> bool:
         """지정 포트에 Chrome 디버깅이 떠 있으면 True, 없으면 False. port 생략 시 DEFAULT_DEBUG_PORT 사용."""
@@ -123,7 +128,7 @@ class ChatGPT:
         chrome_options = Options()
         chrome_options.add_experimental_option("debuggerAddress", f"localhost:{port}")
 
-        print("이미 열린 Chrome에 연결 중... (포트 %d)" % port, flush=True)
+        self._stdout_print("이미 열린 Chrome에 연결 중... (포트 %d)" % port, flush=True)
         result = [None]
 
         def connect() -> None:
@@ -137,18 +142,18 @@ class ChatGPT:
         t.join(timeout=self.CONNECT_TIMEOUT_SEC)
 
         if t.is_alive():
-            print(
+            self._stdout_print(
                 "연결 시간 초과(%d초). Chrome이 포트 %d로 실행 중인지 확인하세요."
                 % (self.CONNECT_TIMEOUT_SEC, port),
                 file=sys.stderr,
             )
             sys.exit(1)
         if isinstance(result[0], Exception):
-            print("Chrome 연결 실패: %s" % result[0], file=sys.stderr)
+            self._stdout_print("Chrome 연결 실패: %s" % result[0], file=sys.stderr)
             sys.exit(1)
 
         self._driver = result[0]
-        print("Chrome 연결됨. 현재 탭에서 입력창을 찾는 중...", flush=True)
+        self._stdout_print("Chrome 연결됨. 현재 탭에서 입력창을 찾는 중...", flush=True)
 
     def _ensure_prompt_ready(self) -> None:
         """입력창이 보이고 클릭 가능할 때까지 대기한다. 실패 시 sys.exit(1)."""
@@ -159,7 +164,7 @@ class ChatGPT:
             )
             wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, self.PROMPT_SELECTOR)))
         except Exception as a_e:
-            print(
+            self._stdout_print(
                 "입력창을 찾지 못했습니다. 현재 탭이 ChatGPT 페이지인지 확인하세요. (%s)" % a_e,
                 file=sys.stderr,
             )
@@ -175,10 +180,10 @@ class ChatGPT:
         self._save_html_to(path_before)
         self._temp_html_files.append(path_before)
         prev_count = self._count_copy_buttons_with_good_response_right()
-        print("전송 전 '복사(오른쪽에 좋은 응답)' 버튼 개수: %d" % prev_count, flush=True)
+        self._stdout_print("전송 전 '복사(오른쪽에 좋은 응답)' 버튼 개수: %d" % prev_count, flush=True)
 
         preview = a_text_to_send[:50] + ("..." if len(a_text_to_send) > 50 else "")
-        print('"%s" 입력 및 전송...' % preview, flush=True)
+        self._stdout_print('"%s" 입력 및 전송...' % preview, flush=True)
         prompt_el.click()
         prompt_el.send_keys(a_text_to_send)
         prompt_el.send_keys(Keys.ENTER)
@@ -209,16 +214,16 @@ class ChatGPT:
                         time.sleep(self.WAIT_AFTER_CLICK_SEC)
                         text = self._get_clipboard_text()
                     except Exception as a_e:
-                        print("클립보드 폴백 실패: %s" % a_e, file=sys.stderr)
+                        self._stdout_print("클립보드 폴백 실패: %s" % a_e, file=sys.stderr)
 
             with open(a_response_path, "w", encoding="utf-8") as f:
                 f.write(text)
-            print("응답 내용을 %s 에 저장했습니다." % a_response_path, flush=True)
-            print("임시 HTML 파일을 삭제했습니다.", flush=True)
+            self._stdout_print("응답 내용을 %s 에 저장했습니다." % a_response_path, flush=True)
+            self._stdout_print("임시 HTML 파일을 삭제했습니다.", flush=True)
             self._delete_temp_files()
             return
 
-        print(
+        self._stdout_print(
             "시간 초과: 새 복사 버튼이 %d초 안에 나타나지 않았습니다." % self.POLL_TIMEOUT_SEC,
             file=sys.stderr,
         )
@@ -235,7 +240,7 @@ class ChatGPT:
         response_path = os.path.abspath(a_response)
 
         if not os.path.isfile(question_path):
-            print("질문 파일을 찾을 수 없습니다: %s" % question_path, file=sys.stderr)
+            self._stdout_print("질문 파일을 찾을 수 없습니다: %s" % question_path, file=sys.stderr)
             sys.exit(1)
 
         with open(question_path, "r", encoding="utf-8") as f:
@@ -244,7 +249,7 @@ class ChatGPT:
         text_to_send = text_to_send.replace("\r\n", "\n").replace("\n", "").replace("\r", "")
 
         if not text_to_send:
-            print("질문 파일이 비어 있습니다: %s" % question_path, file=sys.stderr)
+            self._stdout_print("질문 파일이 비어 있습니다: %s" % question_path, file=sys.stderr)
             sys.exit(1)
 
         # 응답 파일을 없으면 생성, 있으면 비우기
@@ -270,7 +275,8 @@ def main() -> None:
         question_path = os.path.join(_script_dir, "ZZZZ_CHATGPT_QUESTION.txt")
         response_path = os.path.join(_script_dir, "ZZZZ_CHATGPT_RESPONSE.txt")
     chatgpt = ChatGPT()
-    print(f"브라우저 연결 상태: {chatgpt.check_browser()}")
+    if False == chatgpt.check_browser():
+        print(f"브라우저 연결 상태: False")
     chatgpt.get(question_path, response_path)
 
 
