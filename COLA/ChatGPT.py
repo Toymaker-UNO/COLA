@@ -34,6 +34,11 @@ class ChatGPT:
         if self.PRINT_FLAG:
             print(*args, **kwargs)
 
+    def check(self) -> bool:
+        """chromedriver.exe 가 ChatGPT.py 와 같은 디렉터리에 있으면 True, 없으면 False."""
+        _dir = os.path.dirname(os.path.abspath(__file__))
+        return os.path.isfile(os.path.join(_dir, "chromedriver.exe"))
+
     def check_browser(self, port: int | None = None) -> bool:
         """지정 포트에 Chrome 디버깅이 떠 있으면 True, 없으면 False. port 생략 시 DEFAULT_DEBUG_PORT 사용."""
         if port is None:
@@ -229,7 +234,35 @@ class ChatGPT:
         )
         self._delete_temp_files()
 
-    def get(self, a_question: str, a_response: str) -> None:
+    def ask(self, question: str) -> str:
+        """
+        질문을 ChatGPT(브라우저)에 보내고, 응답 텍스트를 반환한다.
+        Chrome이 9222 디버깅 포트로 열려 있고 ChatGPT 탭이 있어야 한다.
+        """
+        question = (question or "").strip()
+        if not question:
+            return ""
+        _dir = os.path.dirname(os.path.abspath(__file__))
+        qpath = os.path.join(_dir, "ZZZZ_CHATGPT_QUESTION.txt")
+        rpath = os.path.join(_dir, "ZZZZ_CHATGPT_RESPONSE.txt")
+        try:
+            with open(qpath, "w", encoding="utf-8") as f:
+                f.write(question)
+        except OSError as e:
+            return f"[ChatGPT] Failed to write question file: {e}"
+        try:
+            self._get(qpath, rpath)
+        except SystemExit:
+            return "[ChatGPT] Run error (connection failed/timeout etc). Check Chrome and ChatGPT tab."
+        except Exception as e:
+            return f"[ChatGPT] Error: {e}"
+        try:
+            with open(rpath, "r", encoding="utf-8") as f:
+                return f.read()
+        except OSError as e:
+            return f"[ChatGPT] Failed to read response file: {e}"
+
+    def _get(self, a_question: str, a_response: str) -> None:
         """
         질문 파일을 읽어 전송하고, 응답을 지정한 파일에 저장한다.
 
@@ -266,7 +299,7 @@ class ChatGPT:
 
 
 def main() -> None:
-    """ChatGPT 인스턴스를 만들고, 질문/응답 파일 경로로 get()을 호출한다."""
+    """ChatGPT 인스턴스를 만들고, 질문/응답 파일 경로로 _get()을 호출한다."""
     _script_dir = os.path.dirname(os.path.abspath(__file__))
     if len(sys.argv) >= 3:
         question_path = sys.argv[1]
@@ -277,7 +310,7 @@ def main() -> None:
     chatgpt = ChatGPT()
     if False == chatgpt.check_browser():
         print(f"브라우저 연결 상태: False")
-    chatgpt.get(question_path, response_path)
+    chatgpt._get(question_path, response_path)
 
 
 if __name__ == "__main__":

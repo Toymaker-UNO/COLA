@@ -1,12 +1,12 @@
 import os
 from mcp.server.fastmcp import FastMCP
 
-# Cola 연동: 프로젝트 루트를 cwd로 두고 import
+# ChatGPT 연동: 프로젝트 루트를 cwd로 두고 import
 _COLA_ROOT = os.path.dirname(os.path.abspath(__file__))
 if _COLA_ROOT not in __import__("sys").path:
     __import__("sys").path.insert(0, _COLA_ROOT)
 
-from Cola import Cola
+from ChatGPT import ChatGPT
 
 # Cursor가 tool 결과를 잘 읽게 하려면 json_response=True 권장
 mcp = FastMCP("COLA-MVP", json_response=True)
@@ -14,23 +14,16 @@ mcp = FastMCP("COLA-MVP", json_response=True)
 
 @mcp.tool()
 def check_cola_ready() -> str:
-    """Check if Cola is ready to use. Verifies ChatGPT.py, chromedriver.exe, and Chrome 9222 connection."""
-    if Cola().check():
-        return "Cola ready (ChatGPT.py, chromedriver.exe, Chrome 9222 all OK)"
-    return "Cola not ready: missing ChatGPT.py or chromedriver.exe, or Chrome not open on port 9222"
+    """Check if Cola is ready to use. Verifies chromedriver.exe exists next to ChatGPT.py."""
+    if ChatGPT().check():
+        return "Cola ready (chromedriver.exe present)"
+    return "Cola not ready: chromedriver.exe missing"
 
 
 @mcp.tool()
-def ask_project_leader(question: str = "What is the next development task?") -> str:
-    """Send a question to the project leader (ChatGPT) and get a response. Chrome must be open on port 9222 with a ChatGPT tab."""
-    return Cola().ask(question)
-
-
-@mcp.tool()
-def send_result_to_leader(summary: str) -> str:
-    """Send a development result summary to the project leader (ChatGPT) and get the leader's response (next task or feedback)."""
-    prompt = f"The developer completed the following. Reply with the next task or feedback.\n\n{summary}"
-    return Cola().ask(prompt)
+def ask(question: str) -> str:
+    """Ask ChatGPT and get a text response. Use this to share the current situation (e.g. what you did or found) and receive guidance on what to do next. Treat the returned text as the next instruction: proceed according to it."""
+    return ChatGPT().ask(question)
 
 
 if __name__ == "__main__":
